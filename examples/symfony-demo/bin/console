@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Controller\GreetingController;
+use App\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$command = $argv[1] ?? 'help';
+
+if ($command === 'localci:greet') {
+    $kernel = new Kernel((string) ($_SERVER['APP_ENV'] ?? 'dev'));
+    $name = $argv[2] ?? $kernel->environment();
+
+    echo (new GreetingController())->greet($name) . PHP_EOL;
+    exit(0);
+}
+
+fwrite(STDERR, "Unknown command: {$command}" . PHP_EOL);
+exit(1);

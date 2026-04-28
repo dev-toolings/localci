@@ -1,0 +1,43 @@
+name: Rust Demo CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: rust:1
+    strategy:
+      matrix:
+        profile: [debug, release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          key: cargo-${{ runner.os }}-${{ matrix.profile }}
+          path: target
+      - run: cargo test
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    container: rust:1
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-demo-bin
+          path: target/release/rust-demo
+
+  verify-artifact:
+    needs: package
+    runs-on: ubuntu-latest
+    container: rust:1
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rust-demo-bin
+          path: output
+      - run: test -f output/target/release/rust-demo
