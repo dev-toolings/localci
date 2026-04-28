@@ -1,0 +1,53 @@
+name: Python Demo CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: python:3.13-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m compileall src tests
+        shell: sh
+
+  tests:
+    needs: lint
+    runs-on: ubuntu-latest
+    container: python:${{ matrix.python }}-alpine
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - run: PYTHONPATH=src python3 -m unittest discover -s tests
+        shell: sh
+
+  package:
+    needs: tests
+    runs-on: ubuntu-latest
+    container: python:3.13-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p dist
+          PYTHONPATH=src python3 -m demo_ci Ada > dist/greeting.txt
+        shell: sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-greeting
+          path: dist/greeting.txt
+
+  verify-artifact:
+    needs: package
+    runs-on: ubuntu-latest
+    container: python:3.13-alpine
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-greeting
+          path: output
+      - run: grep "Hello Ada from Python localci" output/dist/greeting.txt
+        shell: sh

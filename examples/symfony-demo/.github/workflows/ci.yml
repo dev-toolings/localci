@@ -1,0 +1,92 @@
+name: Symfony Demo CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: composer:2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          key: composer-${{ runner.os }}
+          path: vendor
+
+      - name: Validate composer metadata
+        run: composer validate --strict --no-check-lock
+        shell: sh
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        shell: sh
+
+      - name: Lint PHP files
+        run: composer lint
+        shell: sh
+
+  tests:
+    needs: lint
+    runs-on: ubuntu-latest
+    container: composer:2
+    strategy:
+      matrix:
+        scenario: [unit, console]
+    env:
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          key: composer-${{ runner.os }}
+          path: vendor
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        shell: sh
+
+      - name: Run unit tests
+        if: ${{ matrix.scenario == 'unit' }}
+        run: composer test
+        shell: sh
+
+      - name: Run console smoke test
+        if: ${{ matrix.scenario == 'console' }}
+        run: php bin/console localci:greet Ada | grep "Hello Ada from localci"
+        shell: sh
+
+  package:
+    needs: tests
+    runs-on: ubuntu-latest
+    container: composer:2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build manifest
+        run: |
+          mkdir -p build
+          printf "app=symfony-demo\nstatus=ok\n" > build/manifest.txt
+        shell: sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-manifest
+          path: build/manifest.txt
+
+  verify-artifact:
+    needs: package
+    runs-on: ubuntu-latest
+    container: composer:2
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-manifest
+          path: build-artifact
+
+      - name: Verify downloaded artifact
+        run: grep "status=ok" build-artifact/build/manifest.txt
+        shell: sh

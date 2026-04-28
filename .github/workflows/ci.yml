@@ -1,0 +1,33 @@
+name: localci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: cargo fmt -- --check
+      - run: cargo test
+      - run: cargo clippy --all-targets -- -D warnings
+
+  fixtures:
+    runs-on: ubuntu-latest
+    needs: rust
+    strategy:
+      matrix:
+        project:
+          - examples/symfony-demo
+          - examples/node-demo
+          - examples/python-demo
+          - examples/rust-demo
+          - examples/go-demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo run -- dry-run -C ${{ matrix.project }} --format json

@@ -1,0 +1,48 @@
+name: Go Demo CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: golang:${{ matrix.go }}-alpine
+    strategy:
+      matrix:
+        go: ["1.23", "1.24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          key: go-${{ runner.os }}-${{ matrix.go }}
+          path: /go/pkg/mod
+      - run: go test ./...
+        shell: sh
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    container: golang:1.24-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p dist
+          go build -o dist/go-demo ./cmd/demo
+        shell: sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-demo-bin
+          path: dist/go-demo
+
+  verify-artifact:
+    needs: package
+    runs-on: ubuntu-latest
+    container: golang:1.24-alpine
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: go-demo-bin
+          path: output
+      - run: test -f output/dist/go-demo
+        shell: sh
