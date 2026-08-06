@@ -25,13 +25,13 @@ Run GitHub Actions pipelines locally from the workflow files that already exist 
 From source:
 
 ```sh
-cargo install --git https://github.com/MakFly/localci
+cargo install --git https://github.com/dev-toolings/localci
 ```
 
 Or clone and run:
 
 ```sh
-git clone https://github.com/MakFly/localci.git
+git clone https://github.com/dev-toolings/localci.git
 cd localci
 cargo run -- dry-run -C examples/symfony-demo
 ```

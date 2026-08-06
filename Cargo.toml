@@ -5,7 +5,7 @@ edition = "2024"
 description = "Run GitHub Actions pipelines locally from a normalized DAG."
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/MakFly/localci"
+repository = "https://github.com/dev-toolings/localci"
 keywords = ["ci", "github-actions", "docker", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
